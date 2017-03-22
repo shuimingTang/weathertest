@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteDatabase;
 import com.tang.study.simpleweather.entry.City;
 import com.tang.study.simpleweather.entry.County;
 import com.tang.study.simpleweather.entry.Province;
+import com.tang.study.simpleweather.util.LogUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +55,7 @@ public class SimpleWeatherDB {
 
     //save province data
     public static void saveProvince(Province province){
+        LogUtil.e("TAG", "saveProvince");
         ContentValues contentValues = new ContentValues();
         contentValues.put(PROVINCE_NAME, province.getProvinceName());
         contentValues.put(PROVINCE_CODE, province.getProvinceCode());
@@ -61,6 +63,7 @@ public class SimpleWeatherDB {
     }
     //get all provices data
     public static List<Province> loadProvinces(){
+        LogUtil.e("TAG", "loadProvinces");
         List<Province> provinces = null;
         Cursor cursor = db.query(PROVINCE_TABLE, null, null, null, null, null, null);
         if(cursor != null){
@@ -81,6 +84,7 @@ public class SimpleWeatherDB {
     }
 
     public static void saveCity(City city){
+        LogUtil.e("TAG", "saveCity");
         ContentValues contentValues = new ContentValues();
         contentValues.put(CITY_NAME, city.getCityName());
         contentValues.put(CITY_CODE, city.getCityCode());
@@ -89,6 +93,7 @@ public class SimpleWeatherDB {
     }
 
     public static List<City> loadCities(int provinceId){
+        LogUtil.e("TAG", "loadCities");
         List<City> cities = null;
         Cursor cursor = db.query(CITY_TABLE, null, PROVINCE_ID + " = ?",
                 new String[]{String.valueOf(provinceId)}, null, null, null);
@@ -110,6 +115,7 @@ public class SimpleWeatherDB {
     }
 
     public static void saveCounty(County county){
+        LogUtil.e("TAG", "saveCounty");
         ContentValues contentValues = new ContentValues();
         contentValues.put(COUNTY_NAME, county.getCountyName());
         contentValues.put(WEATHER_ID, county.getWeatherId());
@@ -118,6 +124,7 @@ public class SimpleWeatherDB {
     }
 
     public static List<County> loadCounties(int cityId){
+        LogUtil.e("TAG", "loadCounties");
         List<County> counties = null;
         Cursor cursor = db.query(COUNTY_TABLE, null, CITY_ID + " = ?",
                 new String[]{String.valueOf(cityId)}, null, null, null);
