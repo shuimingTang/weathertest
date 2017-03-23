@@ -1,5 +1,6 @@
 package com.tang.study.simpleweather.activity;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -9,7 +10,6 @@ import android.preference.PreferenceManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -24,6 +24,7 @@ import com.tang.study.simpleweather.R;
 import com.tang.study.simpleweather.common.GlobalConast;
 import com.tang.study.simpleweather.gson.Forecast;
 import com.tang.study.simpleweather.gson.Weather;
+import com.tang.study.simpleweather.service.AutoUpdateService;
 import com.tang.study.simpleweather.util.HttpCallbackListener;
 import com.tang.study.simpleweather.util.HttpUtil;
 import com.tang.study.simpleweather.util.LogUtil;
@@ -93,6 +94,11 @@ public class WeatherActivity extends BaseActivity{
         setupView();
         init();
         addListener();
+
+        //启动后台更新
+        Intent autoUpdateService = new Intent(this, AutoUpdateService.class);
+        startService(autoUpdateService);
+
     }
 
     private void init(){
@@ -247,7 +253,8 @@ public class WeatherActivity extends BaseActivity{
         comfortText.setText(comfort);
         carWashText.setText(carWash);
         sportText.setText(sport);
-        weatherScro.setVisibility(View.VISIBLE);//
+        weatherScro.setVisibility(View.VISIBLE);
+
     }
 
     private void loadBingPic(){
