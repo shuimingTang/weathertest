@@ -1,11 +1,14 @@
 package com.tang.study.simpleweather.util;
 
+import com.google.gson.Gson;
 import com.tang.study.simpleweather.db.SimpleWeatherDB;
 import com.tang.study.simpleweather.entry.City;
 import com.tang.study.simpleweather.entry.County;
 import com.tang.study.simpleweather.entry.Province;
+import com.tang.study.simpleweather.gson.Weather;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -18,7 +21,7 @@ public class ParserUtil {
     private ParserUtil(){
 
     }
-
+    //解析省份数据
     public static boolean handleProvinceResponse(SimpleWeatherDB simpleWeatherDB, String response) throws Exception {
         JSONArray provinces = new JSONArray(response);
         if(provinces != null && provinces.length() > 0){
@@ -37,7 +40,7 @@ public class ParserUtil {
         }
         return false;
     }
-
+    //解析城市数据
     public static boolean handleCitiesResponse(SimpleWeatherDB simpleWeatherDB, String response, int provinceId) throws Exception {
         JSONArray cities = new JSONArray(response);
         if(cities != null && cities.length() > 0){
@@ -57,7 +60,7 @@ public class ParserUtil {
         }
         return false;
     }
-
+    //解析县/区数据
     public static boolean handleCountiesResponse(SimpleWeatherDB simpleWeatherDB, String response, int cityId) throws Exception {
         JSONArray counties = new JSONArray(response);
         if(counties != null && counties.length() > 0){
@@ -76,5 +79,16 @@ public class ParserUtil {
             return true;
         }
         return false;
+    }
+    //解析天气数据（通过Gson）
+    public static Weather handleWeatherResponse(String response) throws Exception {
+        Weather weather = null;
+        JSONObject jsonObject = new JSONObject(response);
+        if(jsonObject != null){
+            JSONArray weatherArray = jsonObject.getJSONArray("HeWeather");
+            String weatherContent = weatherArray.getJSONObject(0).toString();
+            weather = new Gson().fromJson(weatherContent, Weather.class);
+        }
+        return weather;
     }
 }

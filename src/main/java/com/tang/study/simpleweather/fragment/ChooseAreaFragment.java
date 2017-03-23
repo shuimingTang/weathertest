@@ -2,6 +2,7 @@ package com.tang.study.simpleweather.fragment;
 
 import android.app.Fragment;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -17,6 +18,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.tang.study.simpleweather.R;
+import com.tang.study.simpleweather.activity.WeatherActivity;
+import com.tang.study.simpleweather.common.GlobalConast;
 import com.tang.study.simpleweather.db.SimpleWeatherDB;
 import com.tang.study.simpleweather.entry.City;
 import com.tang.study.simpleweather.entry.County;
@@ -73,7 +76,6 @@ public class ChooseAreaFragment extends Fragment {
             public void onClick(View v) {
                 if(currentLevel == COUNTY_LEVEL){
                     queryCities();
-                    currentLevel = CITY_LEVEL;
                 }
                 else if(currentLevel == CITY_LEVEL){
                     queryProvinces();
@@ -95,31 +97,28 @@ public class ChooseAreaFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 LogUtil.e("TAG", "item click currentLevel:" + currentLevel);
-                /*if(currentLevel == PROVINCE_LEVEL){
+                if(currentLevel == PROVINCE_LEVEL){
                     if(provinceList != null && !provinceList.isEmpty()){
                         selectedProvince = provinceList.get(position);
                     }
-                    queryProvinces();
-                }
-                else */
-                if(currentLevel == CITY_LEVEL){
-                    if(provinceList != null && !provinceList.isEmpty()){
-                        selectedProvince = provinceList.get(position);
-                    }
-
                     queryCities();
                 }
-                else if(currentLevel == COUNTY_LEVEL){
+                else if(currentLevel == CITY_LEVEL){
                     if(cityList != null && !cityList.isEmpty()){
                         selectedCity = cityList.get(position);
                     }
                     queryCounties();
                 }
+                else if(currentLevel == COUNTY_LEVEL){
+                    Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                    intent.putExtra("weatherId", countyList.get(position).getWeatherId());
+                    getActivity().startActivity(intent);
+                    getActivity().finish();
+                }
             }
         });
     }
 
-    public static final String BASE_URL = "http://guolin.tech/api/china";
 
     //查询省份数据，并显示（首先查看数据库中是否已经存在数据，存在，直接查询，不存在，发送网络请求获取）
     private void queryProvinces(){
@@ -134,10 +133,10 @@ public class ChooseAreaFragment extends Fragment {
             }
             adapter.notifyDataSetChanged();
             listView.setSelection(0);
-            currentLevel = CITY_LEVEL;
+            currentLevel = PROVINCE_LEVEL;
         }
         else {
-            queryFromServer(BASE_URL, "province");
+            queryFromServer(GlobalConast.PROVINCE_URL, "province");
         }
     }
 
@@ -152,10 +151,10 @@ public class ChooseAreaFragment extends Fragment {
             }
             adapter.notifyDataSetChanged();
             listView.setSelection(0);
-            currentLevel = COUNTY_LEVEL;
+            currentLevel = CITY_LEVEL;
         }
         else {
-            String adress = BASE_URL + "/" + (selectedProvince.getProvinceCode());
+            String adress = GlobalConast.PROVINCE_URL + "/" + (selectedProvince.getProvinceCode());
             LogUtil.e("TAG", "city adress:" + adress);
             queryFromServer(adress, "city");
         }
@@ -177,7 +176,7 @@ public class ChooseAreaFragment extends Fragment {
         else {
             int provinceCode = selectedProvince.getProvinceCode();
             int cityCode = selectedCity.getCityCode();
-            String adress = BASE_URL + "/" + provinceCode + "/" + cityCode;
+            String adress = GlobalConast.PROVINCE_URL + "/" + provinceCode + "/" + cityCode;
             LogUtil.e("TAG", "county adress:" + adress);
             queryFromServer(adress, "county");
         }
