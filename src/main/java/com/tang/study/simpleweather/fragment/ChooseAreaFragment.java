@@ -18,6 +18,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.tang.study.simpleweather.R;
+import com.tang.study.simpleweather.activity.MainActivity;
 import com.tang.study.simpleweather.activity.WeatherActivity;
 import com.tang.study.simpleweather.common.GlobalConast;
 import com.tang.study.simpleweather.db.SimpleWeatherDB;
@@ -110,10 +111,22 @@ public class ChooseAreaFragment extends Fragment {
                     queryCounties();
                 }
                 else if(currentLevel == COUNTY_LEVEL){
-                    Intent intent = new Intent(getActivity(), WeatherActivity.class);
-                    intent.putExtra("weatherId", countyList.get(position).getWeatherId());
-                    getActivity().startActivity(intent);
-                    getActivity().finish();
+                    String weatherId = countyList.get(position).getWeatherId();
+                    //如果当前是MainActivity，跳转WeatherActivity显示天气详情
+                    if(getActivity() instanceof MainActivity){
+                        Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                        intent.putExtra("weatherId", weatherId);
+                        getActivity().startActivity(intent);
+                        getActivity().finish();
+                    }
+                    //如果当前WeatherActivity，说明在WeatherActivity侧滑打开了选择切换城市菜单
+                    //关闭打开的侧滑菜单，打开下拉刷新，传递weatherId，刷新选中城市的天气数据
+                    else if(getActivity() instanceof WeatherActivity){
+                        WeatherActivity weatherActivity = (WeatherActivity)getActivity();
+                        weatherActivity.drawerLayout.closeDrawers();
+                        weatherActivity.swipeRefreshLayout.setRefreshing(true);
+                        weatherActivity.requestWeather(weatherId);
+                    }
                 }
             }
         });

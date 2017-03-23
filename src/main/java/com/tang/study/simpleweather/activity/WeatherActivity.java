@@ -6,8 +6,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -46,6 +51,12 @@ public class WeatherActivity extends BaseActivity{
     private String TAG;
     private Handler mainHandler;
     private ImageView imageView;
+    //刷新
+    public SwipeRefreshLayout swipeRefreshLayout;
+    private String weatherId;
+    //侧滑
+    public DrawerLayout drawerLayout;
+    private Button btnChange;
 
     private void setupView(){
         weatherScro = (ScrollView)findViewById(R.id.weather_scrollView);
@@ -60,6 +71,10 @@ public class WeatherActivity extends BaseActivity{
         carWashText = (TextView)findViewById(R.id.car_wash_text);
         sportText = (TextView)findViewById(R.id.sport_text);
         imageView = (ImageView)findViewById(R.id.bing_pic_img);
+        swipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.swipe_refresh);
+        swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);//设置下拉刷新进度条的颜色
+        drawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
+        btnChange = (Button)findViewById(R.id.change_button);
     }
 
     @Override
@@ -77,6 +92,7 @@ public class WeatherActivity extends BaseActivity{
         mainHandler = new Handler();
         setupView();
         init();
+        addListener();
     }
 
     private void init(){
@@ -87,13 +103,14 @@ public class WeatherActivity extends BaseActivity{
             Weather weather = null;
             try {
                 weather = ParserUtil.handleWeatherResponse(weatherResponse);
+                weatherId = weather.basic.weatherId;
                 showWeather(weather);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         else {
-            String weatherId = getIntent().getStringExtra("weatherId");
+            weatherId = getIntent().getStringExtra("weatherId");
             if(!StringUtil.isEmpty(weatherId)){
                 weatherScro.setVisibility(View.INVISIBLE);
                 requestWeather(weatherId);
@@ -108,13 +125,34 @@ public class WeatherActivity extends BaseActivity{
             loadBingPic();
         }
     }
+
+    private void addListener() {
+        //设置下拉刷新监听
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                //下拉，刷新天气
+                requestWeather(weatherId);
+            }
+        });
+        //点击按钮，打开选择城市侧滑菜单
+        btnChange.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                drawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
+    }
+
     //请求天气数据
-    private void requestWeather(final String weatherId){
+    public void requestWeather(final String weatherId){
+        this.weatherId = weatherId;
         String address = GlobalConast.WEATHER_URL +
                 "cityid=" + weatherId + "&key=" + GlobalConast.KEY;
         HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
             @Override
             public void onFinish(String response) {
+                //child thread
                 try{
                     if(!StringUtil.isEmpty(response)){
                         final Weather weather = ParserUtil.handleWeatherResponse(response);
@@ -145,6 +183,12 @@ public class WeatherActivity extends BaseActivity{
                                 }
                             });
                         }
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                swipeRefreshLayout.setRefreshing(false);
+                            }
+                        });
                     }
                 }catch (Exception e){
                     e.printStackTrace();
@@ -159,6 +203,7 @@ public class WeatherActivity extends BaseActivity{
                     public void run() {
                         Toast.makeText(WeatherActivity.this,
                                 "获取天气数据失败", Toast.LENGTH_SHORT).show();
+                        swipeRefreshLayout.setRefreshing(false);
                     }
                 });
             }
