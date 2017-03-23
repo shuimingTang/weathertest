@@ -31,8 +31,6 @@ import com.tang.study.simpleweather.util.StringUtil;
  */
 public class AutoUpdateService extends Service{
 
-    private Handler mainHandler;
-
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -43,7 +41,6 @@ public class AutoUpdateService extends Service{
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         LogUtil.e(getClass().getSimpleName(), "启动自动更新启动...");
-        mainHandler = new Handler(Looper.getMainLooper());
         updateWeather();
         updateBingPic();
         AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
@@ -56,7 +53,7 @@ public class AutoUpdateService extends Service{
         if(Build.VERSION.SDK_INT >= 19){
             alarmManager.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtTime, pi);
         }
-            else {
+        else {
             alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtTime, pi);
         }
         return /*super.onStartCommand(intent, flags, startId)*/START_STICKY;
@@ -64,38 +61,46 @@ public class AutoUpdateService extends Service{
 
     //请求天气数据
     public void updateWeather() {
-        final SharedPreferences sp = PreferenceManager
-                .getDefaultSharedPreferences(AutoUpdateService.this);
-        String weatherId = sp.getString("", "");
-        if (!"".equals(weatherId)) {
-            String address = GlobalConast.WEATHER_URL +
-                    "cityid=" + weatherId + "&key=" + GlobalConast.KEY;
-            HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
-                @Override
-                public void onFinish(String response) {
-                    //child thread
-                    try{
-                        if(!StringUtil.isEmpty(response)){
-                            final Weather weather = ParserUtil.handleWeatherResponse(response);
-                            if(weather != null && "ok".equals(weather.status)){
-                                SharedPreferences.Editor editor = sp.edit();
-                                editor.putString("weather", response);
-                                editor.apply();
-                            }
-                            else {
-                                LogUtil.e(getClass().getSimpleName(), "更新天气失败");
+        try{
+            final SharedPreferences sp = PreferenceManager
+                    .getDefaultSharedPreferences(AutoUpdateService.this);
+            final String weatherContent = sp.getString("weather", "");
+            if(!"".equals(weatherContent)){
+                Weather weather = ParserUtil.handleWeatherResponse(weatherContent);
+                if(weather != null){
+                    String address = GlobalConast.WEATHER_URL +
+                            "cityid=" + weather.basic.weatherId + "&key=" + GlobalConast.KEY;
+                    HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
+                        @Override
+                        public void onFinish(String response) {
+                            //child thread
+                            try{
+                                if(!StringUtil.isEmpty(response)){
+                                    LogUtil.e("TAG", "后台更新weather:" + response);
+                                    final Weather weather = ParserUtil.handleWeatherResponse(response);
+                                    if(weather != null && "ok".equals(weather.status)){
+                                        SharedPreferences.Editor editor = sp.edit();
+                                        editor.putString("weather", response);
+                                        editor.apply();
+                                    }
+                                    else {
+                                        LogUtil.e(getClass().getSimpleName(), "更新天气失败");
+                                    }
+                                }
+                            }catch (Exception e){
+                                e.printStackTrace();
                             }
                         }
-                    }catch (Exception e){
-                        e.printStackTrace();
-                    }
+                        @Override
+                        public void onError(Exception e) {
+                            e.printStackTrace();
+                            LogUtil.e(getClass().getSimpleName(), "更新天气失败");
+                        }
+                    });
                 }
-                @Override
-                public void onError(Exception e) {
-                    e.printStackTrace();
-                    LogUtil.e(getClass().getSimpleName(), "更新天气失败");
-                }
-            });
+            }
+        }catch (Exception e){
+            e.printStackTrace();
         }
     }
 
@@ -105,6 +110,7 @@ public class AutoUpdateService extends Service{
             @Override
             public void onFinish(final String response) {
                 if(!StringUtil.isEmpty(response)){
+                    LogUtil.e("TAG", "后台更新response:" + response);
                     SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(AutoUpdateService.this);
                     SharedPreferences.Editor editor = sp.edit();
                     editor.putString("bing_pic", response);
